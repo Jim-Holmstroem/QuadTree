@@ -15,8 +15,12 @@ cabal.sandbox.config
 *.aux
 *.hp
 
+*.sw[op]
+
 a.out
 output.png
+output.*.png
 data/
 Cities
 QuadTree
+Main
