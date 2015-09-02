@@ -1,5 +1,12 @@
 {-# LANGUAGE OverloadedStrings, FlexibleInstances, MultiParamTypeClasses #-}
 
+module Cities
+( getCities
+, City(..)
+) where
+
+import Data.Function
+import Data.List
 import qualified Text.Parsec.Text as P
 import qualified Text.ParserCombinators.Parsec as PC
 import Control.Monad.Identity (Identity)
@@ -8,17 +15,19 @@ import qualified Data.Text.IO as Text
 
 import System.Environment
 
-import qualified QuadTree as QT
-
 
 data City = City Text.Text Double Double deriving (Show)
 
+
+position (City _ longitude latitude) = (longitude, latitude)
 
 comma :: P.Parser ()
 comma = PC.char ',' >> return ()
 
 
 pseudoDouble = PC.many $ PC.oneOf "+-.0123456789"
+
+
 textField :: P.Parser String
 textField = PC.many (PC.noneOf ",\n") PC.<?> "textField"
 
@@ -60,15 +69,24 @@ cities = do
         where skipHeader = (PC.many (PC.noneOf "\n")) >> PC.char '\n' >> return ()
 
 
-parseLine :: Text.Text -> IO ()
-parseLine line = do
-    print $ render $ PC.parse city "city" line
+parseCity :: Text.Text -> City
+parseCity line = render $ PC.parse city "city" line
     where render (Right value) = value
           render (Left err) = error ("parse failed" ++ show err)
 
-main = do
-    content <- Text.readFile "data/worldcitiespop.utf8.txt"
-    (mapM_ parseLine) $ Prelude.tail $ Text.lines $ content
+
+getCities :: IO [City]
+getCities = do
+    rawData <- Text.readFile "data/worldcitiespop.utf8.txt"
+    return $ positionallyUnique $ (map parseCity) $ body $ Text.lines $ rawData
+        where body = Prelude.tail
+              positionallyUnique = nubBy ((==) `on` position)
+
+
+--main = do
+--    content <- Text.readFile "data/worldcitiespop.utf8.txt"
+--    print "hello"
+    --(mapM_ parseCity) $ Prelude.tail $ Text.lines $ content
     --print $ case parse cities "Cities" content of
     --    Left err -> "no match" ++ show err
     --    Right val -> show val
