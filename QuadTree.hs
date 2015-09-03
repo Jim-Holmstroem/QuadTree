@@ -50,16 +50,52 @@ subdivide (Domain (Point xA yA) (Point xB yB)) = (Domain e g, Domain b d, Domain
     where [_, b, c, d, e, f, g, h, _] = Point <$> [xA, ((xA+xB)/2), xB] <*> [yB, ((yA+yB)/2), yA]
 
 
+inside1D :: Double -> Double -> Double -> Bool
+inside1D w wA wB = wA <= w && w < wB
+
+
 inside :: Point -> Domain -> Bool
 (Point x y) `inside` (Domain (Point xA yA) (Point xB yB)) = (inside1D x xA xB) && (inside1D y yA yB)
-    where inside1D w wA wB = wA <= w && w < wB
+
+
+distance :: Point -> Point -> Double
+distance (Point x y) (Point x' y') = sqrt $ (x'-x)**2 + (y'-y)**2
+
+
+distanceToDomain :: Point -> Domain -> Double
+distanceToDomain p@(Point x y) domain@(Domain (Point xA yA) (Point xB yB))
+    | p `inside` domain = 0.0
+    | xB < x && yB < y = distance p (Point xB yB)  -- closest to (xB, yB)
+    | xA > x && yB < y = distance p (Point xA yB)  -- closest to (xA, yB)
+    | xA > x && yA > y = distance p (Point xA yA)  -- closest to (xA, yA)
+    | xB < x && yA > y = distance p (Point xB yA)  -- closest to (xB, yA)
+    | yB < y = y - yB  -- closest to yB = y
+    | xA > x = xA - x  -- closest to xA = x
+    | yA > y = yA - y  -- closest to yA = y
+    | xB < x = x - xB  -- closest to xB = x
+    | otherwise = error "This should not occure all possible case are already covered"
+
+
+randomQuadTree :: Domain -> Int -> IO (QuadTree Point)
+randomQuadTree domain count = do
+    points <- randomPoints domain count
+    return $ quadTree domain $ zip points points
+
+
+-- The subquadtree consisting of the things with a domain within the radius r from p
+nearQuadTree :: Double -> Point -> QuadTree a -> QuadTree a
+nearQuadTree r p (QuadTree domain ur ul ll lr) = QuadTree domain (nearQuadTree r p ur) (nearQuadTree r p ul) (nearQuadTree r p ll) (nearQuadTree r p lr)
+nearQuadTree r p leaf@(QuadLeaf domain point v)
+    | distanceToDomain p domain < r = leaf
+    | otherwise = QuadEmpty domain
+nearQuadTree r p empty@(QuadEmpty domain) = empty
 
 
 quadTree :: Domain -> [(Point, a)] -> QuadTree a
-quadTree outer_domain [] = QuadEmpty outer_domain
-quadTree outer_domain [(point, value)] = QuadLeaf outer_domain point value
-quadTree outer_domain pvs = QuadTree outer_domain (quadTree domain_ur pvs_ur) (quadTree domain_ul pvs_ul) (quadTree domain_ll pvs_ll) (quadTree domain_lr pvs_lr)
-    where (domain_ur, domain_ul, domain_ll, domain_lr) = subdivide outer_domain
+quadTree domain [] = QuadEmpty domain
+quadTree domain [(point, value)] = QuadLeaf domain point value
+quadTree domain pvs = QuadTree domain (quadTree domain_ur pvs_ur) (quadTree domain_ul pvs_ul) (quadTree domain_ll pvs_ll) (quadTree domain_lr pvs_lr)
+    where (domain_ur, domain_ul, domain_ll, domain_lr) = subdivide domain
           [pvs_ur, pvs_ul, pvs_ll, pvs_lr] = map ($ pvs) $ map filterInside [domain_ur, domain_ul, domain_ll, domain_lr]
           filterInside d = filter ((`inside` d) . fst)
 
@@ -179,13 +215,13 @@ center (Domain (Point xa ya) (Point xb yb)) = Point ((xa+xb)/2) ((ya+yb)/2)
 
 
 randomU01Sequence :: Int -> IO [Double]
-randomU01Sequence length = replicateM length (randomIO :: IO Double)
+randomU01Sequence count = replicateM count (randomIO :: IO Double)
 
 
 randomPoints :: Domain -> Int -> IO [Point]
-randomPoints (Domain (Point xa ya) (Point xb yb)) length = do
-    xs <- randomU01Sequence length
-    ys <- randomU01Sequence length
+randomPoints (Domain (Point xa ya) (Point xb yb)) count = do
+    xs <- randomU01Sequence count
+    ys <- randomU01Sequence count
     return $ zipWith Point (fillW xa xb xs) (fillW ya yb ys)
         where fillW wa wb = map ((+wa).((wb-wa)*))
 
