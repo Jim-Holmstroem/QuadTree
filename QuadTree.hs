@@ -1,10 +1,14 @@
 module QuadTree
 ( Point(..)
 , Domain(..)
+, Renderable(..)
+, QuadTree(..)
 , quadTree
+, nearQuadTree
 , unitDomain
+, randomQuadTree
 , randomPoints
-, renderQuad
+, renderUnitPNG
 , count
 , depth
 , meanDepth
@@ -50,6 +54,8 @@ subdivide (Domain (Point xA yA) (Point xB yB)) = (Domain e g, Domain b d, Domain
     where [_, b, c, d, e, f, g, h, _] = Point <$> [xA, ((xA+xB)/2), xB] <*> [yB, ((yA+yB)/2), yA]
 
 
+-- most be nonoverlapping range (i.e. cannot have wA <= w <= wB) because that could result in a point being
+-- placed into multiple splits
 inside1D :: Double -> Double -> Double -> Bool
 inside1D w wA wB = wA <= w && w < wB
 
@@ -65,15 +71,15 @@ distance (Point x y) (Point x' y') = sqrt $ (x'-x)**2 + (y'-y)**2
 distanceToDomain :: Point -> Domain -> Double
 distanceToDomain p@(Point x y) domain@(Domain (Point xA yA) (Point xB yB))
     | p `inside` domain = 0.0
-    | xB < x && yB < y = distance p (Point xB yB)  -- closest to (xB, yB)
-    | xA > x && yB < y = distance p (Point xA yB)  -- closest to (xA, yB)
-    | xA > x && yA > y = distance p (Point xA yA)  -- closest to (xA, yA)
-    | xB < x && yA > y = distance p (Point xB yA)  -- closest to (xB, yA)
-    | yB < y = y - yB  -- closest to yB = y
-    | xA > x = xA - x  -- closest to xA = x
-    | yA > y = yA - y  -- closest to yA = y
-    | xB < x = x - xB  -- closest to xB = x
-    | otherwise = error "This should not occure all possible case are already covered"
+    | xB <= x && yB <= y = distance p (Point xB yB)  -- closest to (xB, yB)
+    | xA >= x && yB <= y = distance p (Point xA yB)  -- closest to (xA, yB)
+    | xA >= x && yA >= y = distance p (Point xA yA)  -- closest to (xA, yA)
+    | xB <= x && yA >= y = distance p (Point xB yA)  -- closest to (xB, yA)
+    | yB <= y = y - yB  -- closest to yB = y
+    | xA >= x = xA - x  -- closest to xA = x
+    | yA >= y = yA - y  -- closest to yA = y
+    | xB <= x = x - xB  -- closest to xB = x
+    | otherwise = error $ "This should not occure all possible case are already covered: d(" ++ show p ++ ", " ++ show domain ++ ")"
 
 
 randomQuadTree :: Domain -> Int -> IO (QuadTree Point)
@@ -84,7 +90,9 @@ randomQuadTree domain count = do
 
 -- The subquadtree consisting of the things with a domain within the radius r from p
 nearQuadTree :: Double -> Point -> QuadTree a -> QuadTree a
-nearQuadTree r p (QuadTree domain ur ul ll lr) = QuadTree domain (nearQuadTree r p ur) (nearQuadTree r p ul) (nearQuadTree r p ll) (nearQuadTree r p lr)
+nearQuadTree r p (QuadTree domain ur ul ll lr)
+    | distanceToDomain p domain < r = QuadTree domain (nearQuadTree r p ur) (nearQuadTree r p ul) (nearQuadTree r p ll) (nearQuadTree r p lr)
+    | otherwise = QuadEmpty domain
 nearQuadTree r p leaf@(QuadLeaf domain point v)
     | distanceToDomain p domain < r = leaf
     | otherwise = QuadEmpty domain
@@ -227,7 +235,7 @@ randomPoints (Domain (Point xa ya) (Point xb yb)) count = do
 
 
 renderingWidth :: Int
-renderingWidth = 2048
+renderingWidth = 2*2048
 renderingHeight :: Int
 renderingHeight = renderingWidth
 
@@ -284,10 +292,11 @@ renderToPNG filename rendering surface = do
 unitDomain = Domain (Point (-1) (-1)) (Point 1 1)
 
 
-levelTree :: Int -> Domain -> QuadTree Int
-levelTree 0 outer_domain = QuadEmpty outer_domain
-levelTree n outer_domain = QuadTree outer_domain (levelTree (n-1) domain_ur) (levelTree (n-1) domain_ul) (levelTree (n-1) domain_ll) (levelTree (n-1) domain_lr)
+completeQuadTree :: Int -> Domain -> QuadTree Int
+completeQuadTree 0 outer_domain = QuadEmpty outer_domain
+completeQuadTree n outer_domain = QuadTree outer_domain (completeQuadTree (n-1) domain_ur) (completeQuadTree (n-1) domain_ul) (completeQuadTree (n-1) domain_ll) (completeQuadTree (n-1) domain_lr)
     where (domain_ur, domain_ul, domain_ll, domain_lr) = subdivide outer_domain
 
 
-renderQuad filename quad = C.withImageSurface C.FormatARGB32 renderingWidth renderingHeight (renderToPNG filename $ unitRendering (fromIntegral renderingWidth) (fromIntegral renderingHeight) $ render quad)
+renderUnitPNG :: (Renderable a) => FilePath -> a -> IO ()
+renderUnitPNG filename rendering = C.withImageSurface C.FormatARGB32 renderingWidth renderingHeight (renderToPNG filename $ unitRendering (fromIntegral renderingWidth) (fromIntegral renderingHeight) $ render rendering)

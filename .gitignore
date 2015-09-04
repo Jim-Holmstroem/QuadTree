@@ -21,6 +21,8 @@ a.out
 output.png
 output.*.png
 data/
+output/
 Cities
 QuadTree
 Main
+Demo

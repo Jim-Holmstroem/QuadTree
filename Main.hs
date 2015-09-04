@@ -25,4 +25,4 @@ main = do
 
     let selectedCities = map city2unitQuad cities
     print $ show $ QT.meanDepth $ QT.quadTree QT.unitDomain $ take count $ selectedCities
-    --QT.renderQuad ("output." ++ show count ++ ".png") $ QT.quadTree QT.unitDomain $ take count $ selectedCities
+    --QT.renderUnitPNG ("output." ++ show count ++ ".png") $ QT.quadTree QT.unitDomain $ take count $ selectedCities
