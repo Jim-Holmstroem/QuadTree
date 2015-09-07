@@ -90,11 +90,11 @@ randomQuadTree domain count = do
 
 -- The subquadtree consisting of the things with a domain within the radius r from p
 nearQuadTree :: Double -> Point -> QuadTree a -> QuadTree a
-nearQuadTree r p (QuadTree domain ur ul ll lr)
-    | distanceToDomain p domain < r = QuadTree domain (nearQuadTree r p ur) (nearQuadTree r p ul) (nearQuadTree r p ll) (nearQuadTree r p lr)
+nearQuadTree queryR queryPoint (QuadTree domain ur ul ll lr)
+    | distanceToDomain queryPoint domain < queryR = QuadTree domain (nearQuadTree queryR queryPoint ur) (nearQuadTree queryR queryPoint ul) (nearQuadTree queryR queryPoint ll) (nearQuadTree queryR queryPoint lr)
     | otherwise = QuadEmpty domain
-nearQuadTree r p leaf@(QuadLeaf domain point v)
-    | distanceToDomain p domain < r = leaf
+nearQuadTree queryR queryPoint leaf@(QuadLeaf domain point _)
+    | distance queryPoint point < queryR = leaf
     | otherwise = QuadEmpty domain
 nearQuadTree r p empty@(QuadEmpty domain) = empty
 
