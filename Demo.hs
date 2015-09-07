@@ -21,6 +21,21 @@ instance QT.Renderable (Query a) where
         C.restore
 
 
+data Result a = Result Double QT.Point [(QT.Point, a)]
+    deriving (Show)
+
+instance QT.Renderable (Result a) where
+    render (Result r p@(QT.Point x y) ps) = do
+    C.save
+    QT.render $ map fst ps
+
+    C.setSourceRGBA 0 0 0 0.9
+    C.arc x y r 0 (2*pi)
+    C.stroke
+
+    C.restore
+
+
 main :: IO ()
 main = do
     (count':x':y':r':_) <- Env.getArgs
@@ -30,6 +45,8 @@ main = do
 
     quadtree <- QT.randomQuadTree QT.unitDomain count
     let nearquadtree = QT.nearQuadTree r p quadtree
+    let nearresult = QT.near r p quadtree
 
     QT.renderUnitPNG ("output/random." ++ show count ++ ".png") quadtree
-    QT.renderUnitPNG ("output/random." ++ show count ++ ".near.png") $ Query r p nearquadtree
+    QT.renderUnitPNG ("output/random." ++ show count ++ ".debug.png") $ Query r p nearquadtree
+    QT.renderUnitPNG ("output/random." ++ show count ++ ".result.png") $ Result r p nearresult

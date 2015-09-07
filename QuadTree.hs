@@ -167,7 +167,7 @@ instance Renderable Point where
         width <- C.getLineWidth
 
         C.setSourceRGBA 0.5 0.5 0.5 0.5
-        C.arc x y (3*width) 0 (2*pi)
+        C.arc x y (5*width) 0 (2*pi)
         C.fill
 
         C.restore
