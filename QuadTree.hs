@@ -22,6 +22,10 @@ import System.Random
 
 import qualified Graphics.Rendering.Cairo as C
 
+-- Think about the outer interface of this library, should it be independent types like tuples or constructed by for example QuadLeaf
+-- Is QuadTree.Point exceptible as outer interface?
+
+
 -- *----B
 -- |    |
 -- |    |
