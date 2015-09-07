@@ -5,6 +5,7 @@ module QuadTree
 , QuadTree(..)
 , quadTree
 , nearQuadTree
+, near
 , unitDomain
 , randomQuadTree
 , randomPoints
@@ -97,6 +98,16 @@ nearQuadTree queryR queryPoint leaf@(QuadLeaf domain point _)
     | distance queryPoint point < queryR = leaf
     | otherwise = QuadEmpty domain
 nearQuadTree r p empty@(QuadEmpty domain) = empty
+
+
+near :: Double -> Point -> QuadTree a -> [(Point, a)]
+near queryR queryPoint (QuadTree domain ur ul ll lr)
+    | distanceToDomain queryPoint domain < queryR = concatMap (near queryR queryPoint) [ur, ul, ll, lr]
+    | otherwise = []
+near queryR queryPoint (QuadLeaf domain point value)
+    | distance queryPoint point < queryR = [(point, value)]
+    | otherwise = []
+near r p (QuadEmpty _) = []
 
 
 quadTree :: Domain -> [(Point, a)] -> QuadTree a
