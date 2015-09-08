@@ -115,9 +115,16 @@ near r p (QuadEmpty _) = []
 
 
 quadTree :: Domain -> [(Point, a)] -> QuadTree a
-quadTree domain [] = QuadEmpty domain
-quadTree domain [(point, value)] = QuadLeaf domain point value
-quadTree domain pvs = QuadTree domain (quadTree domain_ur pvs_ur) (quadTree domain_ul pvs_ul) (quadTree domain_ll pvs_ll) (quadTree domain_lr pvs_lr)
+quadTree domain pvs
+    | all (\(p, _)->p `inside` domain) pvs = quadTree' domain pvs
+    | otherwise = error $ "Trying to construct a quadTree with points outside of the domain \"" ++ show domain ++ "\": " ++ (show $ map fst $ filter (\(p, _)->not (p `inside` domain)) pvs)
+
+
+--quadTree constructor without validation check
+quadTree' :: Domain -> [(Point, a)] -> QuadTree a
+quadTree' domain [] = QuadEmpty domain
+quadTree' domain [(point, value)] = QuadLeaf domain point value
+quadTree' domain pvs = QuadTree domain (quadTree' domain_ur pvs_ur) (quadTree' domain_ul pvs_ul) (quadTree' domain_ll pvs_ll) (quadTree' domain_lr pvs_lr)
     where (domain_ur, domain_ul, domain_ll, domain_lr) = subdivide domain
           [pvs_ur, pvs_ul, pvs_ll, pvs_lr] = map ($ pvs) $ map filterInside [domain_ur, domain_ul, domain_ll, domain_lr]
           filterInside d = filter ((`inside` d) . fst)
