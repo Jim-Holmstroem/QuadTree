@@ -28,9 +28,16 @@ instance (Arbitrary a) => Arbitrary (QT.QuadTree a) where
     -- use the constructor quadTree to both make the arbitrary simpler and the generated QuadTree a is a valid one (whould be cool if it could generate without using the constructor implementation)
     arbitrary = QT.quadTree <$> arbitrary <*> arbitrary
 
+prop_pointInsideSUnit :: QT.Point -> Bool
+prop_pointInsideSUnit (QT.Point x y) = (-1 <= x && x <= 1) && (-1 <= y && y <= 1)
 
-insideSUnit :: QT.Point -> Bool
-insideSUnit (QT.Point x y) = (-1 <= x && x <= 1) && (-1 <= y && y <= 1)
+prop_DomainInsideSDomain :: QT.Domain -> Bool
+prop_DomainInsideSDomain (QT.Domain a b) = (prop_pointInsideSUnit a) && (prop_pointInsideSUnit b)
 
-insideSDomain :: QT.Domain -> Bool
-insideSDomain (QT.Domain a b) = (insideSUnit a) && (insideSUnit b)
+
+check :: (Testable prop) => prop -> IO ()
+check = quickCheckWith stdArgs { maxSuccess = 1024 }
+
+main = do
+    check prop_pointInsideSUnit
+    check prop_DomainInsideSDomain
