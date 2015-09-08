@@ -4,6 +4,7 @@ module QuadTree
 , Renderable(..)
 , QuadTree(..)
 , quadTree
+, domain
 , nearQuadTree
 , near
 , unitDomain
@@ -42,16 +43,16 @@ import qualified Graphics.Rendering.Cairo as C
 
 
 data Point = Point Double Double
-    deriving (Show)
+    deriving (Show, Eq)
 data Domain = Domain Point Point
-    deriving (Show)
+    deriving (Show, Eq)
 
 
 data QuadTree v =
     QuadTree Domain (QuadTree v) (QuadTree v) (QuadTree v) (QuadTree v)
     | QuadLeaf Domain Point v
     | QuadEmpty Domain
-    deriving Show
+    deriving (Show, Eq)
 
 
 subdivide :: Domain -> (Domain, Domain, Domain, Domain)
