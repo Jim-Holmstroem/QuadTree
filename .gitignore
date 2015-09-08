@@ -24,5 +24,6 @@ data/
 output/
 Cities
 QuadTree
+QuadTreeTest
 Main
 Demo
