@@ -94,6 +94,7 @@ randomQuadTree domain count = do
     return $ quadTree domain $ zip points points
 
 
+-- TODO what should be the order of the arguments?
 -- The subquadtree consisting of the things with a domain within the radius r from p
 nearQuadTree :: Double -> Point -> QuadTree a -> QuadTree a
 nearQuadTree queryR queryPoint (QuadTree domain ur ul ll lr)
