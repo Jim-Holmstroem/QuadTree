@@ -25,5 +25,7 @@ output/
 Cities
 QuadTree
 QuadTreeTest
+ParseBenchmark
+WorldDemo
 Main
 Demo
