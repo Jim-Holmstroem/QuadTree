@@ -4,6 +4,7 @@ Start out
 * A simple demo with visualisations of the datastructure and algorithm ``ghc --make Demo.hs && ./Demo``
 * Read instructions below on how to get the database. Then start the world demo by ``ghc --make WorldDemo.hs && ./WorldDemo``
 
+![Rendering of the algorithm](https://raw.githubusercontent.com/Jim-Holmstroem/QuadTree/master/example_output/random.8192.debug.png)
 
 Note
 ----
